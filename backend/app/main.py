@@ -47,14 +47,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        # Local frontend
-        "http://localhost:3000",
-
-        # Local frontend using 127.0.0.1
-        "http://127.0.0.1:3000",
-
-        # Deployed Vercel frontend
-        "https://scholar-ai-full-stack.vercel.app"
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://scholar-ai-full-stack.vercel.app",
+    "https://scholar-ai-full-stack-7p4e6fpic-ashritha1.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
