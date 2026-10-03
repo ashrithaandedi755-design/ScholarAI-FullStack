@@ -46,20 +46,29 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.detail || "Login failed");
+        const errorMessage =
+          typeof data.detail === "string"
+            ? data.detail
+            : "Login failed";
+
+        alert(errorMessage);
         return;
       }
 
+      // Get user information from backend response
+      const user = data.user;
+
       // Store login information
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user_id", String(data.user_id));
-      localStorage.setItem("user_name", data.name);
-      localStorage.setItem("user_role", data.role);
+      localStorage.setItem("user_id", String(user.id));
+      localStorage.setItem("user_name", user.name);
+      localStorage.setItem("user_role", user.role);
+      localStorage.setItem("user_email", user.email);
 
       alert("Login successful");
 
       // Redirect according to user role
-      if (data.role === "admin") {
+      if (user.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/dashboard");
