@@ -22,11 +22,17 @@ from app.routes import chat
 from app.routes import admin
 
 
-# Create database tables
+# =========================================================
+# CREATE DATABASE TABLES
+# =========================================================
+
 Base.metadata.create_all(bind=engine)
 
 
-# Create FastAPI application
+# =========================================================
+# CREATE FASTAPI APPLICATION
+# =========================================================
+
 app = FastAPI(
     title="ScholarAI API",
     description="Scholarship recommendation and student assistance API",
@@ -34,12 +40,21 @@ app = FastAPI(
 )
 
 
-# CORS configuration
+# =========================================================
+# CORS CONFIGURATION
+# =========================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        # Local frontend
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+
+        # Local frontend using 127.0.0.1
+        "http://127.0.0.1:3000",
+
+        # Deployed Vercel frontend
+        "https://scholar-ai-full-stack.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -47,7 +62,10 @@ app.add_middleware(
 )
 
 
-# Home route
+# =========================================================
+# HOME ROUTE
+# =========================================================
+
 @app.get("/")
 def home():
     return {
@@ -55,7 +73,10 @@ def home():
     }
 
 
-# Authentication
+# =========================================================
+# AUTHENTICATION
+# =========================================================
+
 app.include_router(
     auth.router,
     prefix="/auth",
@@ -63,7 +84,10 @@ app.include_router(
 )
 
 
-# Student Profile
+# =========================================================
+# STUDENT PROFILE
+# =========================================================
+
 app.include_router(
     profile.router,
     prefix="/profile",
@@ -71,7 +95,10 @@ app.include_router(
 )
 
 
-# Scholarships
+# =========================================================
+# SCHOLARSHIPS
+# =========================================================
+
 app.include_router(
     scholarship.router,
     prefix="/scholarship",
@@ -79,7 +106,10 @@ app.include_router(
 )
 
 
-# Eligibility
+# =========================================================
+# ELIGIBILITY
+# =========================================================
+
 app.include_router(
     eligibility.router,
     prefix="/eligibility",
@@ -87,7 +117,10 @@ app.include_router(
 )
 
 
-# Recommendations
+# =========================================================
+# RECOMMENDATIONS
+# =========================================================
+
 app.include_router(
     recommendation.router,
     prefix="/recommendation",
@@ -95,7 +128,10 @@ app.include_router(
 )
 
 
-# Saved Scholarships
+# =========================================================
+# SAVED SCHOLARSHIPS
+# =========================================================
+
 app.include_router(
     saved_scholarship.router,
     prefix="/saved",
@@ -103,7 +139,10 @@ app.include_router(
 )
 
 
-# Application Tracker
+# =========================================================
+# APPLICATION TRACKER
+# =========================================================
+
 app.include_router(
     application.router,
     prefix="/application",
@@ -111,7 +150,10 @@ app.include_router(
 )
 
 
-# Document Checklist
+# =========================================================
+# DOCUMENT CHECKLIST
+# =========================================================
+
 app.include_router(
     document.router,
     prefix="/document",
@@ -119,12 +161,20 @@ app.include_router(
 )
 
 
-# AI Assistant
+# =========================================================
+# AI ASSISTANT
+# =========================================================
+
 app.include_router(
     chat.router,
     prefix="/chat",
     tags=["AI Chat"]
 )
+
+
+# =========================================================
+# ADMIN
+# =========================================================
 
 app.include_router(
     admin.router,
