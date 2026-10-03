@@ -50,6 +50,7 @@ export default function LoginPage() {
         return;
       }
 
+      // Store login information
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user_id", String(data.user_id));
       localStorage.setItem("user_name", data.name);
@@ -57,6 +58,7 @@ export default function LoginPage() {
 
       alert("Login successful");
 
+      // Redirect according to user role
       if (data.role === "admin") {
         router.push("/admin");
       } else {
@@ -248,11 +250,7 @@ export default function LoginPage() {
 
                 <input
                   id="password"
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={form.password}
                   onChange={handleChange}
@@ -268,9 +266,7 @@ export default function LoginPage() {
                   }
                   aria-label="Show or hide password"
                 >
-                  {showPassword
-                    ? "Hide"
-                    : "Show"}
+                  {showPassword ? "Hide" : "Show"}
                 </button>
 
               </div>
@@ -283,9 +279,7 @@ export default function LoginPage() {
               className="login-button"
               disabled={loading}
             >
-              {loading
-                ? "Logging in..."
-                : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
 
           </form>
