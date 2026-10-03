@@ -1,7 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
-DATABASE_URL = "sqlite:///./data/scholarai.db"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./data/scholarai.db"
+)
+
+if DATABASE_URL.startswith("sqlite"):
+    os.makedirs("data", exist_ok=True)
 
 engine = create_engine(
     DATABASE_URL,
