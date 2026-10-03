@@ -12,13 +12,17 @@ router = APIRouter()
 
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
     finally:
         db.close()
 
 
+# --------------------------------------------------
 # Create Scholarship - Admin only
+# --------------------------------------------------
+
 @router.post("/")
 def create_scholarship(
     scholarship: ScholarshipCreate,
@@ -26,20 +30,26 @@ def create_scholarship(
     db: Session = Depends(get_db)
 ):
     new_scholarship = Scholarship(
-    name=scholarship.name,
-    provider=scholarship.provider,
-    description=scholarship.description,
-    amount=scholarship.amount,
-    deadline=scholarship.deadline,
-    eligibility=scholarship.eligibility,
-    application_link=scholarship.application_link,
+        name=scholarship.name,
+        provider=scholarship.provider,
+        description=scholarship.description,
+        amount=scholarship.amount,
+        deadline=scholarship.deadline,
+        eligibility=scholarship.eligibility,
+        application_link=scholarship.application_link,
 
-    min_income=scholarship.min_income,
-    max_income=scholarship.max_income,
-    required_state=scholarship.required_state,
-    required_category=scholarship.required_category,
-    required_education=scholarship.required_education
-)
+        min_income=scholarship.min_income,
+        max_income=scholarship.max_income,
+
+        required_state=scholarship.required_state,
+        required_category=scholarship.required_category,
+        required_education=scholarship.required_education,
+
+        # Real scholarship information
+        source_name=scholarship.source_name,
+        source_url=scholarship.source_url,
+        academic_year=scholarship.academic_year
+    )
 
     db.add(new_scholarship)
     db.commit()
@@ -51,7 +61,11 @@ def create_scholarship(
     }
 
 
-# Get Scholarships - Students and Admins
+# --------------------------------------------------
+# Get Scholarships
+# Students and Admins
+# --------------------------------------------------
+
 @router.get("/")
 def get_scholarships(
     search: str = None,
@@ -65,38 +79,55 @@ def get_scholarships(
 ):
     query = db.query(Scholarship)
 
+    # Search by scholarship name
     if search:
         query = query.filter(
             Scholarship.name.ilike(f"%{search}%")
         )
 
+    # Filter by provider
     if provider:
         query = query.filter(
             Scholarship.provider.ilike(f"%{provider}%")
         )
 
+    # Minimum amount
     if min_amount is not None:
         query = query.filter(
             Scholarship.amount >= min_amount
         )
 
+    # Maximum amount
     if max_amount is not None:
         query = query.filter(
             Scholarship.amount <= max_amount
         )
 
+    # Sorting
     if sort_by == "amount_asc":
-        query = query.order_by(Scholarship.amount.asc())
+        query = query.order_by(
+            Scholarship.amount.asc()
+        )
 
     elif sort_by == "amount_desc":
-        query = query.order_by(Scholarship.amount.desc())
+        query = query.order_by(
+            Scholarship.amount.desc()
+        )
 
     elif sort_by == "deadline":
-        query = query.order_by(Scholarship.deadline.asc())
+        query = query.order_by(
+            Scholarship.deadline.asc()
+        )
 
+    # Pagination
     skip = (page - 1) * limit
 
-    scholarships = query.offset(skip).limit(limit).all()
+    scholarships = (
+        query
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
     return {
         "page": page,
@@ -105,15 +136,22 @@ def get_scholarships(
     }
 
 
+# --------------------------------------------------
 # Get Single Scholarship
+# --------------------------------------------------
+
 @router.get("/{scholarship_id}")
 def get_scholarship(
     scholarship_id: int,
     db: Session = Depends(get_db)
 ):
-    scholarship = db.query(Scholarship).filter(
-        Scholarship.id == scholarship_id
-    ).first()
+    scholarship = (
+        db.query(Scholarship)
+        .filter(
+            Scholarship.id == scholarship_id
+        )
+        .first()
+    )
 
     if not scholarship:
         raise HTTPException(
@@ -124,7 +162,10 @@ def get_scholarship(
     return scholarship
 
 
+# --------------------------------------------------
 # Update Scholarship - Admin only
+# --------------------------------------------------
+
 @router.put("/{scholarship_id}")
 def update_scholarship(
     scholarship_id: int,
@@ -132,9 +173,13 @@ def update_scholarship(
     current_user=Depends(admin_required),
     db: Session = Depends(get_db)
 ):
-    existing_scholarship = db.query(Scholarship).filter(
-        Scholarship.id == scholarship_id
-    ).first()
+    existing_scholarship = (
+        db.query(Scholarship)
+        .filter(
+            Scholarship.id == scholarship_id
+        )
+        .first()
+    )
 
     if not existing_scholarship:
         raise HTTPException(
@@ -152,9 +197,15 @@ def update_scholarship(
 
     existing_scholarship.min_income = scholarship.min_income
     existing_scholarship.max_income = scholarship.max_income
+
     existing_scholarship.required_state = scholarship.required_state
     existing_scholarship.required_category = scholarship.required_category
     existing_scholarship.required_education = scholarship.required_education
+
+    # Real scholarship information
+    existing_scholarship.source_name = scholarship.source_name
+    existing_scholarship.source_url = scholarship.source_url
+    existing_scholarship.academic_year = scholarship.academic_year
 
     db.commit()
     db.refresh(existing_scholarship)
@@ -164,16 +215,23 @@ def update_scholarship(
     }
 
 
+# --------------------------------------------------
 # Delete Scholarship - Admin only
+# --------------------------------------------------
+
 @router.delete("/{scholarship_id}")
 def delete_scholarship(
     scholarship_id: int,
     current_user=Depends(admin_required),
     db: Session = Depends(get_db)
 ):
-    scholarship = db.query(Scholarship).filter(
-        Scholarship.id == scholarship_id
-    ).first()
+    scholarship = (
+        db.query(Scholarship)
+        .filter(
+            Scholarship.id == scholarship_id
+        )
+        .first()
+    )
 
     if not scholarship:
         raise HTTPException(

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
@@ -9,24 +11,24 @@ export default function Home() {
           </h1>
 
           <div className="flex gap-3">
-            <a
+            <Link
               href="/login"
               className="rounded-lg border border-blue-600 px-5 py-2 text-blue-600 hover:bg-blue-50"
             >
               Login
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/signup"
               className="rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
             >
               Sign Up
-            </a>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="mx-auto max-w-6xl px-6 py-24 text-center">
         <h2 className="text-4xl font-bold text-gray-900 md:text-5xl">
           Find Scholarships That Match You
@@ -38,19 +40,19 @@ export default function Home() {
         </p>
 
         <div className="mt-8 flex justify-center gap-4">
-          <a
+          <Link
             href="/signup"
             className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
           >
             Get Started
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/scholarships"
             className="rounded-lg border border-gray-300 px-6 py-3 font-semibold text-gray-700 hover:bg-gray-50"
           >
             Explore Scholarships
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -61,6 +63,7 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-gray-900">
               Student Profile
             </h3>
+
             <p className="mt-3 text-gray-600">
               Create your profile with your education, state, category, and
               income details.
@@ -71,6 +74,7 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-gray-900">
               Scholarship Matching
             </h3>
+
             <p className="mt-3 text-gray-600">
               Discover scholarships that match your eligibility information.
             </p>
@@ -80,6 +84,7 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-gray-900">
               AI Assistant
             </h3>
+
             <p className="mt-3 text-gray-600">
               Ask questions about scholarships and get explanations using
               ScholarAI&apos;s AI assistant.

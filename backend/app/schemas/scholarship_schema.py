@@ -11,9 +11,14 @@ class ScholarshipCreate(BaseModel):
     eligibility: str
     application_link: str
 
-    # Eligibility rules
     min_income: Optional[float] = None
     max_income: Optional[float] = None
+
     required_state: Optional[str] = None
     required_category: Optional[str] = None
     required_education: Optional[str] = None
+
+    # Real scholarship information
+    source_name: Optional[str] = None
+    source_url: Optional[str] = None
+    academic_year: Optional[str] = None
