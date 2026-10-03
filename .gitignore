@@ -1,0 +1,21 @@
+# Environment variables
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# SQLite database
+*.db
+
+# Next.js
+frontend/.next/
+frontend/node_modules/
+
+# Node
+node_modules/
+
+# VS Code
+.vscode/
