@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./admin.css";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function AdminPage() {
   const router = useRouter();
@@ -326,9 +326,7 @@ export default function AdminPage() {
             Authorization: `Bearer ${token}`,
           },
 
-          body: JSON.stringify(
-            scholarshipData
-          ),
+          body: JSON.stringify(scholarshipData),
         }
       );
 
@@ -452,9 +450,7 @@ export default function AdminPage() {
             Authorization: `Bearer ${token}`,
           },
 
-          body: JSON.stringify(
-            scholarshipData
-          ),
+          body: JSON.stringify(scholarshipData),
         }
       );
 
@@ -475,6 +471,7 @@ export default function AdminPage() {
       resetForm();
 
       await loadScholarships();
+      await loadStats();
     } catch (error) {
       console.error(
         "Update scholarship error:",
@@ -700,8 +697,6 @@ export default function AdminPage() {
                   : "Add New Scholarship"}
               </h3>
 
-              {/* Scholarship Name */}
-
               <div className="form-group">
 
                 <label>
@@ -718,8 +713,6 @@ export default function AdminPage() {
                 />
 
               </div>
-
-              {/* Provider */}
 
               <div className="form-group">
 
@@ -738,8 +731,6 @@ export default function AdminPage() {
 
               </div>
 
-              {/* Description */}
-
               <div className="form-group">
 
                 <label>
@@ -756,8 +747,6 @@ export default function AdminPage() {
                 />
 
               </div>
-
-              {/* Amount */}
 
               <div className="form-group">
 
@@ -777,8 +766,6 @@ export default function AdminPage() {
 
               </div>
 
-              {/* Deadline */}
-
               <div className="form-group">
 
                 <label>
@@ -794,8 +781,6 @@ export default function AdminPage() {
                 />
 
               </div>
-
-              {/* Eligibility */}
 
               <div className="form-group">
 
@@ -814,8 +799,6 @@ export default function AdminPage() {
 
               </div>
 
-              {/* Application Link */}
-
               <div className="form-group">
 
                 <label>
@@ -825,17 +808,13 @@ export default function AdminPage() {
                 <input
                   type="url"
                   name="application_link"
-                  value={
-                    form.application_link
-                  }
+                  value={form.application_link}
                   onChange={handleChange}
                   placeholder="https://example.com"
                   required
                 />
 
               </div>
-
-              {/* Income */}
 
               <div className="form-row">
 
@@ -875,8 +854,6 @@ export default function AdminPage() {
 
               </div>
 
-              {/* State */}
-
               <div className="form-group">
 
                 <label>
@@ -886,16 +863,12 @@ export default function AdminPage() {
                 <input
                   type="text"
                   name="required_state"
-                  value={
-                    form.required_state
-                  }
+                  value={form.required_state}
                   onChange={handleChange}
                   placeholder="Optional"
                 />
 
               </div>
-
-              {/* Category */}
 
               <div className="form-group">
 
@@ -906,16 +879,12 @@ export default function AdminPage() {
                 <input
                   type="text"
                   name="required_category"
-                  value={
-                    form.required_category
-                  }
+                  value={form.required_category}
                   onChange={handleChange}
                   placeholder="Optional"
                 />
 
               </div>
-
-              {/* Education */}
 
               <div className="form-group">
 
@@ -926,23 +895,17 @@ export default function AdminPage() {
                 <input
                   type="text"
                   name="required_education"
-                  value={
-                    form.required_education
-                  }
+                  value={form.required_education}
                   onChange={handleChange}
                   placeholder="Optional"
                 />
 
               </div>
 
-              {/* Submit */}
-
               <button
                 type="submit"
                 className="save-scholarship-button"
-                disabled={
-                  savingScholarship
-                }
+                disabled={savingScholarship}
               >
                 {savingScholarship
                   ? "Saving..."
@@ -958,11 +921,9 @@ export default function AdminPage() {
 
           {loadingScholarships && (
             <div className="empty-state">
-
               <h3>
                 Loading scholarships...
               </h3>
-
             </div>
           )}
 
