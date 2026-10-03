@@ -1,51 +1,88 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import "./details.css";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ScholarshipDetailsPage() {
   const params = useParams();
   const router = useRouter();
 
-  const [scholarship, setScholarship] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [scholarship, setScholarship] =
+    useState(null);
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [isSaved, setIsSaved] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
 
   const [eligibility, setEligibility] =
     useState(null);
+
   const [checkingEligibility, setCheckingEligibility] =
     useState(false);
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
+  // ============================================================
+  // GET TOKEN
+  // ============================================================
 
-  // Load scholarship details
-  useEffect(() => {
-    const loadScholarship = async () => {
+  const getToken = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("token");
+    }
+
+    return null;
+  };
+
+  // ============================================================
+  // LOAD SCHOLARSHIP DETAILS
+  // ============================================================
+
+  const loadScholarship = useCallback(
+    async () => {
+      if (!params.id) {
+        return;
+      }
+
+      setLoading(true);
+
       try {
+        const token = getToken();
+
         const response = await fetch(
           `${API_URL}/scholarship/${params.id}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            method: "GET",
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {},
           }
         );
 
         if (!response.ok) {
           throw new Error(
-            "Failed to load scholarship"
+            `Failed to load scholarship: ${response.status}`
           );
         }
 
         const data = await response.json();
+
+        console.log(
+          "Scholarship details:",
+          data
+        );
 
         setScholarship(data);
       } catch (error) {
@@ -53,23 +90,36 @@ export default function ScholarshipDetailsPage() {
           "Scholarship details error:",
           error
         );
+
+        setScholarship(null);
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [params.id]
+  );
 
-    if (params.id) {
-      loadScholarship();
-    }
-  }, [params.id, token]);
+  // ============================================================
+  // LOAD SAVED STATUS
+  // ============================================================
 
-  // Check whether scholarship is already saved
-  useEffect(() => {
-    const checkSavedScholarship = async () => {
+  const checkSavedScholarship =
+    useCallback(async () => {
+      if (!params.id) {
+        return;
+      }
+
+      const token = getToken();
+
+      if (!token) {
+        return;
+      }
+
       try {
         const response = await fetch(
           `${API_URL}/saved/`,
           {
+            method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -78,17 +128,42 @@ export default function ScholarshipDetailsPage() {
 
         if (!response.ok) {
           throw new Error(
-            "Failed to load saved scholarships"
+            `Failed to load saved scholarships: ${response.status}`
           );
         }
 
         const data = await response.json();
 
+        console.log(
+          "Saved scholarships:",
+          data
+        );
+
+        /*
+          Backend normally returns:
+
+          {
+            "count": ...,
+            "saved_scholarships": [...]
+          }
+
+          This also supports a direct array response.
+        */
+
+        const savedList =
+          Array.isArray(data)
+            ? data
+            : data.saved_scholarships || [];
+
+        const scholarshipId =
+          Number(params.id);
+
         const alreadySaved =
-          data.saved_scholarships?.some(
+          savedList.some(
             (item) =>
-              item.scholarship_id ===
-              Number(params.id)
+              Number(
+                item.scholarship_id
+              ) === scholarshipId
           );
 
         setIsSaved(alreadySaved);
@@ -97,17 +172,47 @@ export default function ScholarshipDetailsPage() {
           "Saved scholarship check error:",
           error
         );
+
+        setIsSaved(false);
       }
+    }, [params.id]);
+
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
+
+  useEffect(() => {
+    const loadPageData = async () => {
+      await loadScholarship();
+      await checkSavedScholarship();
     };
 
-    if (params.id && token) {
-      checkSavedScholarship();
-    }
-  }, [params.id, token]);
+    loadPageData();
+  }, [
+    loadScholarship,
+    checkSavedScholarship,
+  ]);
 
-  // Save scholarship
+  // ============================================================
+  // SAVE SCHOLARSHIP
+  // ============================================================
+
   const saveScholarship = async () => {
+    if (!scholarship) {
+      return;
+    }
+
     if (isSaved) {
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      alert(
+        "Please login to save scholarships."
+      );
+
       return;
     }
 
@@ -118,62 +223,100 @@ export default function ScholarshipDetailsPage() {
         `${API_URL}/saved/`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify({
-            scholarship_id: scholarship.id,
+            scholarship_id:
+              scholarship.id,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         alert(
           data.detail ||
             "Failed to save scholarship"
         );
+
         return;
       }
 
       setIsSaved(true);
 
-      alert("Scholarship saved successfully");
+      alert(
+        "Scholarship saved successfully"
+      );
     } catch (error) {
       console.error(
         "Save scholarship error:",
         error
       );
 
-      alert("Something went wrong");
+      alert(
+        "Something went wrong while saving the scholarship."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Check eligibility
+  // ============================================================
+  // CHECK ELIGIBILITY
+  // ============================================================
+
   const checkEligibility = async () => {
+    if (!scholarship) {
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      alert(
+        "Please login to check eligibility."
+      );
+
+      return;
+    }
+
     setCheckingEligibility(true);
+
+    setEligibility(null);
 
     try {
       const response = await fetch(
         `${API_URL}/eligibility/${scholarship.id}`,
         {
+          method: "GET",
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      console.log(
+        "Eligibility response:",
+        data
+      );
 
       if (!response.ok) {
         alert(
           data.detail ||
             "Failed to check eligibility"
         );
+
         return;
       }
 
@@ -184,63 +327,92 @@ export default function ScholarshipDetailsPage() {
         error
       );
 
-      alert("Something went wrong");
+      alert(
+        "Something went wrong while checking eligibility."
+      );
     } finally {
       setCheckingEligibility(false);
     }
   };
 
-  // Loading
+  // ============================================================
+  // LOADING
+  // ============================================================
+
   if (loading) {
     return (
       <main className="details-page">
         <div className="details-container">
-          <p>Loading scholarship...</p>
+          <p>
+            Loading scholarship...
+          </p>
         </div>
       </main>
     );
   }
 
-  // Scholarship not found
+  // ============================================================
+  // SCHOLARSHIP NOT FOUND
+  // ============================================================
+
   if (!scholarship) {
     return (
       <main className="details-page">
         <div className="details-container">
-          <h2>Scholarship not found</h2>
+
+          <h2>
+            Scholarship not found
+          </h2>
 
           <button
+            className="back-button"
             onClick={() =>
-              router.push("/scholarships")
+              router.push(
+                "/scholarships"
+              )
             }
           >
             Back to Scholarships
           </button>
+
         </div>
       </main>
     );
   }
 
+  // ============================================================
+  // PAGE
+  // ============================================================
+
   return (
     <main className="details-page">
+
       <div className="details-container">
 
-        {/* Back button */}
+        {/* Back Button */}
 
         <button
           className="back-button"
           onClick={() =>
-            router.push("/scholarships")
+            router.push(
+              "/scholarships"
+            )
           }
         >
           ← Back to Scholarships
         </button>
+
+        {/* Details Card */}
 
         <div className="details-card">
 
           {/* Header */}
 
           <div className="details-header">
-            <h1>{scholarship.name}</h1>
+
+            <h1>
+              {scholarship.name}
+            </h1>
 
             <p>
               Provider:{" "}
@@ -248,13 +420,15 @@ export default function ScholarshipDetailsPage() {
                 {scholarship.provider}
               </strong>
             </p>
+
           </div>
 
-          {/* Amount and deadline */}
+          {/* Amount and Deadline */}
 
           <div className="details-summary">
 
             <div className="summary-item">
+
               <span>
                 Scholarship Amount
               </span>
@@ -263,11 +437,15 @@ export default function ScholarshipDetailsPage() {
                 ₹
                 {Number(
                   scholarship.amount
-                ).toLocaleString("en-IN")}
+                ).toLocaleString(
+                  "en-IN"
+                )}
               </strong>
+
             </div>
 
             <div className="summary-item">
+
               <span>
                 Application Deadline
               </span>
@@ -275,6 +453,7 @@ export default function ScholarshipDetailsPage() {
               <strong>
                 {scholarship.deadline}
               </strong>
+
             </div>
 
           </div>
@@ -282,26 +461,35 @@ export default function ScholarshipDetailsPage() {
           {/* Description */}
 
           <section className="details-section">
-            <h2>Description</h2>
+
+            <h2>
+              Description
+            </h2>
 
             <p>
               {scholarship.description}
             </p>
+
           </section>
 
-          {/* Eligibility description */}
+          {/* Eligibility */}
 
           <section className="details-section">
-            <h2>Eligibility</h2>
+
+            <h2>
+              Eligibility
+            </h2>
 
             <p>
               {scholarship.eligibility}
             </p>
+
           </section>
 
-          {/* Eligibility requirements */}
+          {/* Eligibility Requirements */}
 
           <section className="details-section">
+
             <h2>
               Eligibility Requirements
             </h2>
@@ -312,6 +500,7 @@ export default function ScholarshipDetailsPage() {
                 null &&
                 scholarship.min_income !==
                   undefined && (
+
                   <p>
                     <strong>
                       Minimum Income:
@@ -323,12 +512,14 @@ export default function ScholarshipDetailsPage() {
                       "en-IN"
                     )}
                   </p>
+
                 )}
 
               {scholarship.max_income !==
                 null &&
                 scholarship.max_income !==
                   undefined && (
+
                   <p>
                     <strong>
                       Maximum Income:
@@ -340,33 +531,40 @@ export default function ScholarshipDetailsPage() {
                       "en-IN"
                     )}
                   </p>
+
                 )}
 
               {scholarship.required_state && (
+
                 <p>
                   <strong>
                     Required State:
                   </strong>{" "}
                   {scholarship.required_state}
                 </p>
+
               )}
 
               {scholarship.required_category && (
+
                 <p>
                   <strong>
                     Required Category:
                   </strong>{" "}
                   {scholarship.required_category}
                 </p>
+
               )}
 
               {scholarship.required_education && (
+
                 <p>
                   <strong>
                     Required Education:
                   </strong>{" "}
                   {scholarship.required_education}
                 </p>
+
               )}
 
               {!scholarship.min_income &&
@@ -374,34 +572,42 @@ export default function ScholarshipDetailsPage() {
                 !scholarship.required_state &&
                 !scholarship.required_category &&
                 !scholarship.required_education && (
+
                   <p>
                     No specific requirements
                     provided.
                   </p>
+
                 )}
 
             </div>
+
           </section>
 
-          {/* Application */}
+          {/* Application Section */}
 
           <section className="details-section">
-            <h2>Application</h2>
+
+            <h2>
+              Application
+            </h2>
 
             <p>
-              Apply using the official
-              application link provided for
-              this scholarship.
+              You can save this scholarship,
+              check your eligibility, or open
+              the application link.
             </p>
 
             <div className="application-buttons">
 
-              {/* Save */}
+              {/* SAVE */}
 
               <button
                 type="button"
                 className="save-button"
-                onClick={saveScholarship}
+                onClick={
+                  saveScholarship
+                }
                 disabled={
                   isSaved || saving
                 }
@@ -413,12 +619,14 @@ export default function ScholarshipDetailsPage() {
                   : "Save Scholarship"}
               </button>
 
-              {/* Check Eligibility */}
+              {/* CHECK ELIGIBILITY */}
 
               <button
                 type="button"
                 className="eligibility-button"
-                onClick={checkEligibility}
+                onClick={
+                  checkEligibility
+                }
                 disabled={
                   checkingEligibility
                 }
@@ -428,7 +636,7 @@ export default function ScholarshipDetailsPage() {
                   : "Check Eligibility"}
               </button>
 
-              {/* Apply */}
+              {/* APPLY */}
 
               <a
                 href={
@@ -442,11 +650,13 @@ export default function ScholarshipDetailsPage() {
               </a>
 
             </div>
+
           </section>
 
-          {/* Eligibility Result */}
+          {/* ELIGIBILITY RESULT */}
 
           {eligibility && (
+
             <section className="eligibility-result">
 
               <h2>
@@ -465,9 +675,12 @@ export default function ScholarshipDetailsPage() {
                   : "✗ You are not eligible"}
               </h3>
 
+              {/* Reasons */}
+
               {eligibility.reasons &&
                 eligibility.reasons.length >
                   0 && (
+
                   <div className="eligibility-reasons">
 
                     <strong>
@@ -475,22 +688,32 @@ export default function ScholarshipDetailsPage() {
                     </strong>
 
                     <ul>
+
                       {eligibility.reasons.map(
                         (
                           reason,
                           index
                         ) => (
-                          <li key={index}>
+
+                          <li
+                            key={index}
+                          >
                             {reason}
                           </li>
+
                         )
                       )}
+
                     </ul>
 
                   </div>
+
                 )}
 
+              {/* AI Explanation */}
+
               {eligibility.ai_explanation && (
+
                 <div className="ai-explanation">
 
                   <strong>
@@ -504,13 +727,16 @@ export default function ScholarshipDetailsPage() {
                   </p>
 
                 </div>
+
               )}
 
             </section>
+
           )}
 
         </div>
       </div>
+
     </main>
   );
 }
