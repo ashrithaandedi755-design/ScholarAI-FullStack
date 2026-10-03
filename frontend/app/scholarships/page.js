@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./scholarships.css";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ScholarshipsPage() {
   const router = useRouter();
@@ -17,13 +17,11 @@ export default function ScholarshipsPage() {
   const [sort, setSort] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("token")
-      : null;
+  // ============================================================
+  // LOAD SCHOLARSHIPS
+  // ============================================================
 
-  // Load scholarships with filters
-  const loadScholarships = async () => {
+  const loadScholarships = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -46,90 +44,101 @@ export default function ScholarshipsPage() {
       }
 
       if (sort) {
-        params.append("sort", sort);
+        params.append("sort_by", sort);
       }
+
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("token")
+          : null;
 
       const response = await fetch(
         `${API_URL}/scholarship/?${params.toString()}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          method: "GET",
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : {},
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to load scholarships");
+        throw new Error(
+          `Failed to load scholarships: ${response.status}`
+        );
       }
 
       const data = await response.json();
 
-      // Backend returns scholarships inside "results"
+      console.log(
+        "Scholarship API response:",
+        data
+      );
+
       setScholarships(data.results || []);
     } catch (error) {
       console.error(
         "Scholarship loading error:",
         error
       );
+
+      setScholarships([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    search,
+    provider,
+    minAmount,
+    maxAmount,
+    sort,
+  ]);
 
-  // Initial loading
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
+
   useEffect(() => {
     const loadInitialScholarships = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/scholarship/`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to load scholarships");
-        }
-
-        const data = await response.json();
-
-        // Backend returns scholarships inside "results"
-        setScholarships(data.results || []);
-      } catch (error) {
-        console.error(
-          "Scholarship loading error:",
-          error
-        );
-      }
+      await loadScholarships();
     };
 
     loadInitialScholarships();
-  }, [token]);
+  }, [loadScholarships]);
 
-  // Search button
+  // ============================================================
+  // SEARCH
+  // ============================================================
+
   const handleSearch = () => {
     loadScholarships();
   };
 
-  // Clear filters
+  // ============================================================
+  // CLEAR FILTERS
+  // ============================================================
+
   const clearFilters = () => {
     setSearch("");
     setProvider("");
     setMinAmount("");
     setMaxAmount("");
     setSort("");
-
-    setTimeout(() => {
-      loadScholarships();
-    }, 0);
   };
 
-  // View scholarship details
+  // ============================================================
+  // VIEW DETAILS
+  // ============================================================
+
   const viewDetails = (id) => {
     router.push(`/scholarships/${id}`);
   };
+
+  // ============================================================
+  // PAGE
+  // ============================================================
 
   return (
     <main className="scholarships-page">
@@ -150,6 +159,7 @@ export default function ScholarshipsPage() {
 
           <div className="filter-row">
 
+            {/* Search */}
             <div className="filter-group">
               <label htmlFor="search">
                 Search
@@ -166,6 +176,7 @@ export default function ScholarshipsPage() {
               />
             </div>
 
+            {/* Provider */}
             <div className="filter-group">
               <label htmlFor="provider">
                 Provider
@@ -186,6 +197,7 @@ export default function ScholarshipsPage() {
 
           <div className="filter-row">
 
+            {/* Minimum Amount */}
             <div className="filter-group">
               <label htmlFor="minAmount">
                 Minimum Amount
@@ -202,6 +214,7 @@ export default function ScholarshipsPage() {
               />
             </div>
 
+            {/* Maximum Amount */}
             <div className="filter-group">
               <label htmlFor="maxAmount">
                 Maximum Amount
@@ -218,6 +231,7 @@ export default function ScholarshipsPage() {
               />
             </div>
 
+            {/* Sort */}
             <div className="filter-group">
               <label htmlFor="sort">
                 Sort
@@ -242,18 +256,15 @@ export default function ScholarshipsPage() {
                   Amount: High to Low
                 </option>
 
-                <option value="deadline_asc">
+                <option value="deadline">
                   Deadline: Earliest
-                </option>
-
-                <option value="deadline_desc">
-                  Deadline: Latest
                 </option>
               </select>
             </div>
 
           </div>
 
+          {/* Buttons */}
           <div className="filter-buttons">
 
             <button
@@ -274,7 +285,7 @@ export default function ScholarshipsPage() {
 
         </div>
 
-        {/* Results */}
+        {/* Results Header */}
         <div className="results-header">
           <h2>Available Scholarships</h2>
 
@@ -294,7 +305,7 @@ export default function ScholarshipsPage() {
           </p>
         )}
 
-        {/* No results */}
+        {/* No Results */}
         {!loading &&
           scholarships.length === 0 && (
             <div className="no-results">
@@ -342,9 +353,7 @@ export default function ScholarshipsPage() {
                         ₹
                         {Number(
                           scholarship.amount
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
+                        ).toLocaleString("en-IN")}
                       </span>
                     </div>
 
